@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-$pdflatex       = "lualatex -shell-escape -synctex=1 -halt-on-error";
+$pdflatex       = "lualatex -interaction=nonstopmode -shell-escape -synctex=1 -halt-on-error";
 $biber          = 'biber --bblencoding=utf8 -u -U --output_safechars';
 $max_repeat     = 5;
 
