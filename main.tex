@@ -1,5 +1,10 @@
-\documentclass[10pt, b5paper, openany]{ltjsbook}
+\documentclass[10pt,b5paper,twoside,openany]{ltjsbook}
+% 10pt: フォントサイズ
+% b5paper: B5
+% twoside: 両面印刷用設定 偶数ページと奇数ページでレイアウトが変化する
+% openany: 章変更時に空白ページを挿入しない
 
+% packages
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[backend=biber, maxnames=100, backref=true]{biblatex}
@@ -11,10 +16,35 @@
 \usepackage{here}
 \usepackage{comment}
 \usepackage{listings}
+\usepackage{multicol}
+\usepackage{wrapfig}
+\usepackage{bxpapersize}
+\usepackage{biblatex}
 
-\setlength{\textwidth}{\fullwidth}
-\setlength{\evensidemargin}{\oddsidemargin}
+% 参考文献追加 + 全ての文献を表示
+\nocite{*}
+\addbibresource{bibliography.bib}
 
+%= 余白設定(いじらないでください）
+%== 横余白
+% 137 + 20 + 25 = 182mm
+\setlength{\oddsidemargin}{-1truein}        % デフォルトの余白1inchを消す
+\setlength{\evensidemargin}{-1truein}       % デフォルトの余白1inchを消す
+\setlength{\textwidth}{152truemm}       % テキスト横幅
+\setlength{\fullwidth}{\textwidth}      % テキストが柱の線に合うように
+\addtolength{\oddsidemargin}{15truemm}  % ノド15mm
+\addtolength{\evensidemargin}{15truemm} % 小口15mm
+%
+%== 縦余白
+% 209 + 20 + 20 + 8  = 257mm
+\setlength{\topmargin}{-1truein}            % デフォルトの余白1inchを消す
+\setlength{\headheight}{0truemm}        % ヘッダ長
+\setlength{\textheight}{209truemm}      % テキスト縦幅
+\setlength{\headsep}{8truemm}           % ヘッダと本文の間隔
+\addtolength{\topmargin}{20truemm}      % 天20mm
+%
+
+% ソースコードの設定
 \lstset{
   basicstyle={\ttfamily},
   identifierstyle={\small},
@@ -34,14 +64,28 @@
   lineskip=-0.5ex
 }
 
+% .aiファイルをpdfファイルとして認識させる
 \DeclareGraphicsRule{.ai}{pdf}{.ai}{}
 
-\title{ \LaTeX Sample1 } 
-\author{ komekome09(こめわっぽ) }
-\date{ \today }
+% chapterの余白設定
+\makeatletter
+\renewcommand{\chapter}{%
+  \if@openright\cleardoublepage\else\clearpage\fi
+  \global\@topnum\z@
+  \secdef\@chapter\@schapter}
+\makeatother
 
-\begin{document} %document環境
+% 本文
+\begin{document}
+
+% 表紙裏
+\thispagestyle{empty}
+\mbox{}
+\newpage
+
+% 本文
 \chapter*{はじめに}
+\addcontentsline{toc}{chapter}{はじめに}
 みなさんはゲームをやっていますか？
 PCでやるゲームと言えば、アクションゲーム、リズムゲーム、RPGなどがありますが、この本で扱うのはいわゆるノベルゲームと呼ばれるタイプのゲームについてです。
 
@@ -51,7 +95,6 @@ PCでやるゲームと言えば、アクションゲーム、リズムゲーム
     \item Windowsしか対応してないけど宗教上の理由でWindowsが使えない… Vineだと動かないし…
 \end{itemize}
 こんなときにOSなどのプラットフォームに依存しないような実行環境があったら良いと思いませんか？
-筆者は(学会などで遠出した際に)感じることがありました。
 
 プラットフォーム非依存の環境で動作させるとなるとQtやJavaなどのクロスプラットフォームを採用しているソフトやライブラリで開発をすれば可能です。
 しかし今までに発売されたソフトの中にはWindowsでしか動かないようなソフトも当然ありますし、それらのソフトに対する答えにはなりえません。
@@ -65,6 +108,12 @@ PCでやるゲームと言えば、アクションゲーム、リズムゲーム
 \clearpage
 
 \chapter{UEFIとは}
+\begin{wrapfigure}{r}[5pt]{0.3\linewidth}
+    \centering
+    \includegraphics[scale=0.5]{pic/uefi.ai}
+    \caption{EFIとOS、ファームウェアの関係図}
+    \label{fig:efi_os_firmware}
+\end{wrapfigure}
 UEFIはUnified Extensible Firmware Interfaceの略で、OSとプラットフォームファームウェア間を結ぶインターフェースのことを指します。
 一言で言うとBIOSの後継のようなものですが、BIOSから機能が大幅に拡張、変更されています。
 BIOSでは基本的にOSのロードを行うブートローダーとしての役割がほとんどでしたが、UEFIではそのロードの前段階であらかじめ用意された多くの機能を扱うことができます。
@@ -75,16 +124,22 @@ BIOSでは基本的にOSのロードを行うブートローダーとしての�
 \footnote{ただしこれは法的に問題があったため、2002年のバージョンアップからが正式となっています}
 現在の最新バージョンは2.8です。
 
-この本では、提供されるランタイム機能を駆使してUEFIアプリ(ノベルゲーム)を作成します。
+この本では、提供されるランタイム機能を駆使してUEFIアプリ(ノベルゲームの土台)を作成します。
 そのUEFIアプリを作るのは別に仕様書を片手に全部1から書くことができますが、普通は開発用のツールが提供されています。
 UEFIアプリでは主にEDK2とgnu-efiの2つが有名なツールです。
 
 両者の大きな違いは機能の差です。
-gnu-efiはUEFIのランタイムを扱う最低限の機能が提供されており、EDK2はこれに加えてmruby、libcなどのより高水準の機能が使えます。
-この本ではgnu-efiを用いて開発を行っています。
+gnu-efiはUEFIのランタイムを扱う最低限の機能が提供されており、EDK2はこれに加えてpython、libcなどのより高水準の機能が使えます。
+この本ではDocker上で実行することやMakefileを扱う関係からgnu-efiを用いて開発を行っています。
 
 \chapter{環境構築}
-環境構築を行う前に、筆者の開発環境を下記に示します。
+この本ではUEFIアプリをDockerを使って開発します。
+Dockerを使う理由としてはgnu-efiを使う関係でgccをいれる必要があり、ホスト側に構築すると環境が汚れてしまうという問題があったためです。
+\footnote{後述しますがclangで生成することも可能です。この時点では知りませんでした。}
+そのためホスト側の環境を汚さないようにするため、コンパイル部分にDockerを使っています。
+
+\section{開発環境}
+今回は以下の開発環境で開発を行っています。
 \begin{table}[H]
     \centering
     \begin{tabular}{|c|c|}
@@ -96,97 +151,165 @@ gnu-efiはUEFIのランタイムを扱う最低限の機能が提供されてお
         \hline
     \end{tabular}
 \end{table}
-macOSを使用していますが、コンパイルにはdockerを使うので他のOSでも動くと思います。
+後述しますが、コンパイルにはdockerを使うのでDockerが動く環境であれば他のOSでも同じように動きます。
 
-使用したソフト、ライブラリは、
+使用したソフトは、
+\begin{itemize}
+    \item Docker Desktop Community Ver. 2.0.0.3 (31259)
+    \item QEMU emulator version 4.0.0
+\end{itemize}
+Docker上で使用したライブラリは、
 \begin{itemize}
     \item gcc 8.2.0
     \item curl 7.63.0 (x86\_64)
-    \item Docker Desktop Community Ver. 2.0.0.3 (31259)
-    \item QEMU emulator version 4.0.0
     \item gnu-efi 3.0.9
 \end{itemize}
 です。
 
-Dockerはなるべくホストの環境を汚さずに開発を行うために使っています。
-DockerFileなどを含めたソースコード類はGitHubに上げています\footnote{\url{https://github.com/komekome09/efi-story}}。
-今回は非常に軽量なAlpine Linux上にgnu-efiをビルドしています。
+開発環境を構築する上でのディレクトリ構成も以下に示します。
+(efi-storyという名前のディレクトリを想定しています)
+{
+    \centering
+    \begin{verbatim}
+        ./efi-story
+        |-- Dockerfile
+        |-- docker-compose.yml
+        +-- src
+            |-- Makefile
+            |-- main.c
+            |-- main.efi
+            |-- main.h
+            |-- stb_image.h
+    \end{verbatim}
+}
+ディレクトリ直下にDockerfileとdocker-compose.yml、srcディレクトリを配置し、srcディレクトリの下に実際のソースコードなどを置きます。
+Dockerを使った開発の流れは、
+\begin{enumerate}
+    \item ホスト環境でコードを編集する(srcディレクトリ以下)
+    \item ルートディレクトリ上でdockerコンテナを実行してコンパイル
+    \item コンパイルが完了するとDockerコンテナとの共有ディレクトリ(srcディレクトリ)にファイルが生成される
+    \item ホスト上で実行(今回はQEMU)
+\end{enumerate} 
+のような形で行います。
 
-実行ファイルはPE32+形式ですが、クロスコンパイラ等は使用せずにコンパイルを行います。
-まず普通にコンパイルを行い、その後生成されたファイルをobjcopyを用いてUEFIアプリケーションとして認識されるように書き換えています。
+\section{構築手順}
+ここからの手順はDockerをインストールしている前提で話を進めます。
+\subsection{Dockerコンテナの作成}
+まずはDockerコンテナを作成するところから始めます。
 
-このコンテナではコンパイル部分のみを実行し、実際のコード編集と実行はホスト上で行うようにしています。
-そのためコンテナとホストで開発ディレクトリを共有しています。
-こうすることでホスト側の環境を汚すことなくコンパイルが可能になります。
+実際のDockerfileを以下に示します。
+\begin{lstlisting}[caption=dockerfile,label=dockerfile]
+FROM alpine:latest
 
-この方法の他にもclangから直接PE32+形式のファイルを生成することも可能です。
-その場合はDockerも必要なくなります(詳しくは\url{https://dvdhrm.github.io/2019/01/31/goodbye-gnuefi/}参照)。
+ENV GNUEFI_VERSION 3.0.9
 
-QEMUでUEFIを扱うには、OVMF(Open Virtual Machine Hardware)と呼ばれるファームウェアを用いることで扱えるようにします。
-OVMFはEDK2の一部として現在は配布されているなので
+WORKDIR /var
+
+RUN apk --update add --virtual build-dependences \
+        build-base \
+        curl \
+    && curl -sSL "https://sourceforge.net/projects/gnu-efi/files/gnu-efi-${GNUEFI_VERSION}.tar.bz2/download" -o gnu-efi.tar.bz2 \
+    && tar xvf gnu-efi.tar.bz2 \
+    && ls \
+    && cd gnu-efi-${GNUEFI_VERSION} \
+    && make \
+    && make install \
+    && mkdir /var/gnuefi/ \
+    && cd /var/gnuefi
+
+WORKDIR /var/gnuefi
+CMD ["make"]
+\end{lstlisting}
+今回は軽量LinuxディストリビューションであるAlpine Linuxを使っています。
+
+Alpine LinuxはMusl LibcとBusyboxを基にしたLinuxディストリビューションで、非常に軽量であることから数多くのDockerコンテナで採用されています。
+\footnote{\url{https://alpinelinux.org/}}
+Alpine Linuxではパッケージのインストールにapkと呼ばれるパッケージマネージャを利用します。
+
+コンテナ上ではbuild-baseとcurlをインストールしています。
+build-baseは他のディストリビューションでいうbuild-essentialみたいなもので、開発に必要な機能を提供します。
+curlはこの下にあるgnu-efiのダウンロードに使用しています。
+インストールしているのはこの2つのみですが、build-dependenciesというグループでまとめることで後々消すことになった場合などに一括して消せるようにしています。
+\footnote{今のところこれが必要になった場面はありませんが…}
+
+apkで必要なパッケージをインストールした後はgnu-efiのコンパイルを行います。
+特に指定する項目などは無いので単純にmake \&\& make installでコンパイル、インストールをしています。
+
+その後の処理はホスト側との共有用のディレクトリを作成しています。
+Dockerfile上では共有設定をしていませんが、この後示すdocker-compose上で共有設定を行います。
+
+次にdocker-composeファイルの中身を以下に示します。
+\begin{lstlisting}[caption=docker-compose,label=docker-compose]
+version: '3'
+services:
+    uefi-story:
+        build: .
+        container_name: efi-story
+        volumes:
+            - ./src:/var/gnuefi
+\end{lstlisting}
+1つしかコンテナが無いのになんでdocker-compose使っている理由は筆者がDocker単体でボリューム設定をうまく出来なかったからです…。
+\footnote{真面目に読んでて分からなかったのでdocker-composeに逃げてしまっていますが、あんまり良くは無い気がするので機会を見て挑戦したいところです。}    
+一番最後の行でコンテナ内のディレクトリとホスト側のディレクトリの共有設定を行っています。
+
+これで環境構築は完了です。
+
+\section{実行ファイルの生成}
+UEFIアプリの実行ファイルはPE32+形式です。
+これはWindows上で使用される実行ファイルの形式であり、本来であればWindows以外の環境(今回はLinux)では生成できません。
+そのため、PE32+形式となるように生成ファイルに変更を加える必要があります。
+生成ファイルの変更はobjcopyを用いてUEFIアプリケーションとして認識されるように書き換えています。
+\footnote{具体的にどうやっているのかは筆者も勉強中です}
+
+生成ファイルの変更する以外に、clang(LLVM)から直接PE32+形式のファイルを生成することも可能です。
+その場合は環境を汚さないためDockerも必要なくなります。
+\footnote{詳しくは\url{https://dvdhrm.github.io/2019/01/31/goodbye-gnuefi/}参照。夏コミ以降で筆者も試してみるつもりです。}
+
+\section{UEFI in QEMU}
+QEMUでUEFIを扱うには、OVMF(Open Virtual Machine Hardware)と呼ばれるファームウェアを用いる必要があります。
+OVMFはEDK2の一部として現在は配布されているので
 \footnote{\url{https://github.com/tianocore/edk2/tree/master/OvmfPkg}}
 そこからダウンロードしますが、ビルドが必要になります。
 今回はSourceForgeにあるビルド済のバイナリを用いています。
 \footnote{\url{https://sourceforge.net/projects/edk2/files/OVMF/}}
+この処理はMakefile上に記載しています(後述)。
 
-コード編集から実行までの流れは、
-\begin{enumerate}
-    \item コードを編集する
-    \item dockerコンテナを実行してコンパイル $\rightarrow$ 共有ディレクトリにファイルが生成される
-    \item ホスト上で実行(今回はqemu)
-\end{enumerate}
-となります。
 
 3段階に分かれてコマンドを叩くのは面倒なので、Makefileを用いてmakeコマンドのみで実行までできるようにしています。
 
-\chapter{必要となる実装}
-UEFIアプリ上でノベルゲームの土台を作るという目標ですが、具体的にどのような機能を実装すればいいのかを以下に示しました。
-\begin{itemize}
-    \item ファイル処理(読み書き)
-    \item 画像処理(表示)
-    \item BGM
-    \item テキスト(フォント等)
-    \item キー入力
-\end{itemize}
-まずはこれを足掛りとして考えていきます。
-
-\section{ファイル処理}
-ファイル処理はEFIインターフェースで提供されています。
-そのため、仕様書に従って実装するだけで機能を実現できます。
-
-\section{画像処理}
-画像処理は表示するだけならEFIインターフェースで可能です。
-表示には各ピクセルのRGBデータを得る必要がありますが、画像ファイルが圧縮されている場合などは解凍処理などを実装する必要があります。
-また、透過処理(アルファブレンドなど)も実装が必要となります。
-ノベルゲームなどでは図\ref{fig:nobel_exp}に示すようにテキストを表示する枠の部分(ピンク色)が背景画像(橙色)に対して透過していることが多々あるため、機能としては必須と考えています。
-\begin{figure}[H]
+\chapter{実装項目と詳細}
+UEFIアプリ上でノベルゲームを作る上で実装する機能を以下に示します。
+\begin{multicols}{2}
     \centering
-    \includegraphics[scale=0.3]{pic/nobel_exp.ai}
-    \caption{ノベルゲームの表示例}
-    \label{fig:nobel_exp}
-\end{figure}
+    \begin{itemize}
+        \item ファイル処理
+        \begin{itemize}
+            \item ファイルボリュームのオープン
+            \item ファイルの読み込み
+        \end{itemize}
+        \item 画像処理
+        \begin{itemize}
+            \item 透過処理
+            \item バッファリング
+        \end{itemize}
+        \item BGM
+        \columnbreak
+        \item テキスト
+        \begin{itemize}
+            \item フォント(TrueTypeなど)
+            \item 可変長変数の入力
+        \end{itemize}
+        \item キー入力
+    \end{itemize}
+\end{multicols}
+この本ではBGM、フォントのTrueType対応を除く部分を実装しました。
+ソースコード類はGitHubに上げています。
+\footnote{\url{https://github.com/komekome09/efi-story}}
+この本の中でソースコードまで載せるのは量が増えすぎてしまうので適宜コードを見ながら読んでください。
+以下では実装に使った関数や実装方法などを載せています。
 
-\section{BGM}
-BGMに関してはUEFIが提供しているインターフェースに音楽などの再生機能が無いため、ドライバ経由でアクセスするなどの手段を自力で実装する必要があります。
-実装方法としてはPCスピーカーを使う方法がもっとも単純ですが、いわゆるビープ音しか鳴らせないためHDA(High Difinition Audio)インターフェースに対応することでより高音質なデータを扱うことができます。
-この本ではBGMに関しては述べません。
-
-\section{テキスト}
-インターフェース自体にも文字の出力関数は用意されていますが、画像で塗り潰してしまうため見えなくなるというのと、図\ref{fig:defaultfont}のように見栄えが非常に悪くなるという問題があります。
-\begin{figure}[H]
-    \centering
-    \includegraphics[scale=0.3]{pic/defaultfont.png}
-    \caption{標準インターフェースでの文字の表示例}
-    \label{fig:defaultfont}
-\end{figure}
-そのため、フォントを画像として表示することで各種問題を回避しています。
-今回はGNU Unifontのビットマップ画像を用いたフォント表示を実装することにしました。
-ビットマップフォントなので見た目はよろしくありませんが、背景色で透過できるためより自然な見た目になります。
-将来的にはTrueTypeフォントを扱えるようにすることでより綺麗にフォントが表示することを考えています。
-
-\chapter{コード}
 \section{プログラミングをする上でのUEFI}
-上で挙げた実装を実際のコードではどのように実現しているのかをこの項では書いていきますが、その前にUEFIランタイム(とgnu-efi)を扱う上で気をつけておく(自分が気になった)点を説明します。
+実装について説明する前にUEFIランタイム(とgnu-efi)を扱う上で気をつけておく(自分が気になった)点を説明します。
 \subsection{プロトコルとハンドラ}
 一般的なプログラミング言語と同様に、UEFIのプロトコルもメモリ上にある関数へのポインタを経由して関数を呼び出しています。
 その関数ポインタや識別するためのGUID、関数を使用するのに必要なデータ構造などをまとめた構造体がプロトコルと呼んでいるものです。
@@ -208,8 +331,11 @@ uefi_call_wrapper(GraphicsOutput->Blt, 10, GraphicsOutput, BltBuffer, EfiBltBuff
 正確には使用しているデータ構造や処理内容が機械語ではどのように表わせるかを規定したものです。
 \footnote{今回はMicrosoft ABIとSysv ABIの差異を吸収するのに用いられています。}
 gnu-efiでは\verb+uefi_call_wrapper+マクロを使わないと呼び出せない場合があるので基本的にはこのマクロ経由で呼び出すようにしましょう。
+\footnote{たまに忘れてなんで動かないんだこれってなります。}
 
 \section{ファイル処理}
+ファイル処理はEFIインターフェースで提供されています。
+
 ファイルの処理には読み込む前にまずファイルが存在するディレクトリボリュームを開く必要があります。
 ディレクトリボリュームは\verb+EFI_SIMPLE_FILE_SYSTEM_PROTOCOL+内のOpenVolume関数を用いて開きます。
 必要となる部分だけ抜粋して載せます。
@@ -235,6 +361,17 @@ typedef struct _EFI_FILE_PROTOCOL {
 \footnote{書いている途中にGetInfo関数で取れることに気づきました…}
 
 \section{画像処理}
+画像処理は表示するだけならEFIインターフェースで可能です。
+表示には各ピクセルのRGBデータを得る必要がありますが、画像ファイルが圧縮されている場合などは解凍処理などを実装する必要があります。
+また、透過処理(アルファブレンドなど)も実装が必要となります。
+ノベルゲームなどでは図\ref{fig:nobel_exp}に示すようにテキストを表示する枠の部分(ピンク色)が背景画像(橙色)に対して透過していることが多々あるため、機能としては必須と考えています。
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.3]{pic/nobel_exp.ai}
+    \caption{ノベルゲームの表示例}
+    \label{fig:nobel_exp}
+\end{figure}
+
 UEFI上での描画には、\verb+EFI_GRAPHICS_OUTPUT_PROTOCOL+というプロトコルを利用します。
 \verb+EFI_GRAPHICS_OUTPUT_PROTOCOL+と\verb+EFI_GRAPHICS_OUTPUT_BLT_PIXEL+の構造を使用する部分だけ抜粋したのを以下に示します。
 \begin{lstlisting}[caption=EFI\_GRAPHICS\_OUTPUT\_PROTOCOL,label=efi_gop]
@@ -290,7 +427,35 @@ typedef struct {
 \end{itemize}
 この処理を繰り返すことで描画を行います。
 
-\section{フォント処理}
+\section{BGM}
+BGMに関してはUEFIが提供しているインターフェースに音楽などの再生機能が無いため、ドライバ経由でアクセスするなどの手段を自力で実装する必要があります。
+実装方法としてはPCスピーカーを使う方法がもっとも単純ですが、いわゆるビープ音しか鳴らせないためHDA(High Difinition Audio)インターフェースに対応することでより高音質なデータを扱うことができます。
+この本ではBGMに関しては述べません。
+
+\section{テキスト}
+インターフェース自体にも文字の出力関数は用意されていますが、画像で塗り潰してしまうため見えなくなるというのと、図\ref{fig:defaultfont}のように見栄えが非常に悪くなるという問題があります。
+\begin{figure}[H]
+    \centering
+    \begin{tabular}{c}
+        \begin{minipage}{0.5\hsize}
+            \centering
+            \includegraphics[scale=0.22]{pic/defaultfont.png}
+            \caption{標準インターフェースでの文字の表示例}
+            \label{fig:defaultfont}
+        \end{minipage}
+        \begin{minipage}{0.5\hsize}
+            \centering
+            \includegraphics[scale=0.22]{pic/screenshot.png}
+            \caption{透過処理を施したビットマップフォントでの文字の表示例}
+            \label{fig:bitmapfont}
+        \end{minipage}
+    \end{tabular}  
+\end{figure}
+そのため、フォントを画像として表示することで各種問題を回避しています(図\ref{fig:bitmapfont})。
+今回はGNU Unifontのビットマップ画像を用いたフォント表示を実装することにしました。
+ビットマップフォントなので見た目はよろしくありませんが、背景色で透過できるためより自然な見た目になります。
+将来的にはTrueTypeフォントを扱えるようにすることでより綺麗にフォントが表示することを考えています。
+
 今回フォントの表示にはビットマップフォントを用いるので画像処理が出来ればフォント処理も同様に可能です。
 ただしそのまま表示すると下の図のようにフォントの部分だけ背景が黒色になってしまうので、透過処理が必要になります。
 \begin{figure}[H]
@@ -322,7 +487,34 @@ UnicodeCharはScanCodeとは逆にUnicodeで表現できる文字が入力され
 Unicodeで表現できない文字の場合は0を代入します。
 
 \chapter{あとがき}
+hogehogehogeblahblahblah
+\newpage
 
+\thispagestyle{empty}
+\printbibliography[title=参考文献]
+\newpage
+
+% 奥付
+\thispagestyle{empty}
+\vspace*{\stretch{1}}
+\begin{flushright}
+    \begin{minipage}{0.8\hsize}
+        \begin{description}
+            \item{タイトル: } hogehogehoge
+            \item{著者: }こめわっぽ
+            \item{発行: }2019年8月12日
+            \item{連絡先: }komekome09.online@gmail.com
+            \item{Twitter: }@komekome09
+            \item{印刷: }株式会社 栄光 様
+        \end{description}
+    \end{minipage}
+\end{flushright}
+\newpage
+
+% 裏表紙裏
+\thispagestyle{empty}
+\mbox{}
+\newpage
 
 \end{document}
 
