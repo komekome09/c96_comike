@@ -45,24 +45,32 @@
 %
 
 % ソースコードの設定
-\lstset{
-  basicstyle={\ttfamily},
-  identifierstyle={\small},
-  commentstyle={\smallitshape},
-  keywordstyle={\small\bfseries},
-  ndkeywordstyle={\small},
-  stringstyle={\small\ttfamily},
-  frame={tb},
-  breaklines=true,
-  columns=[l]{fullflexible},
-  numbers=left,
-  xrightmargin=0\zw,
-  xleftmargin=3\zw,
-  numberstyle={\scriptsize},
-  stepnumber=1,
-  numbersep=1\zw,
-  lineskip=-0.5ex
+\renewcommand{\lstlistingname}{Program}
+\lstdefinestyle{customC}{
+	language={C},% 使用する言語
+	showstringspaces={false},% 半角スペースを表示するか（style に依存
+	frame={shadowbox},framesep={4pt},% 外枠の設定
+	numbers={left},stepnumber={1},numberstyle={\footnotesize},numbersep={10pt},% 行番号の設定
+	tabsize={4},% タブ幅を 4 に設定
+	breaklines={true},% 自動折り返しをオンに
+	basicstyle={\ttfamily\scriptsize},%
+	commentstyle={\itshape \color[rgb]{0.0,0.6,0.0}},%
+	keywordstyle={\bfseries \color[cmyk]{1.0,0.0,0.0,0.3}},%
+	stringstyle={\ttfamily \color[cmyk]{0.0, 1.0, 0.0, 0.0}}%
 }
+\lstdefinestyle{customBash}{
+	language={bash},%
+	showstringspaces={false},%
+	frame={shadowbox},framesep={4pt},%
+	numbers={left},stepnumber={1},numberstyle={\footnotesize},numbersep={10pt},%
+	tabsize={4},%
+	breaklines={true},%
+	basicstyle={\ttfamily\scriptsize},%
+	commentstyle={\itshape \color[rgb]{0.0,0.6,0.0}},%
+	keywordstyle={\bfseries \color[cmyk]{1.0,0.0,0.0,0.3}},%
+	stringstyle={\ttfamily \color[cmyk]{0.0, 1.0, 0.0, 0.0}}%
+}
+\lstset{escapechar=@,style=customBash}
 
 % .aiファイルをpdfファイルとして認識させる
 \DeclareGraphicsRule{.ai}{pdf}{.ai}{}
@@ -171,15 +179,15 @@ Docker上で使用したライブラリは、
 {
     \centering
     \begin{verbatim}
-        ./efi-story
-        |-- Dockerfile
-        |-- docker-compose.yml
-        +-- src
-            |-- Makefile
-            |-- main.c
-            |-- main.efi
-            |-- main.h
-            |-- stb_image.h
+    ./efi-story
+    |-- Dockerfile
+    |-- docker-compose.yml
+    +-- src
+        |-- Makefile
+        |-- main.c
+        |-- main.efi
+        |-- main.h
+        |-- stb_image.h
     \end{verbatim}
 }
 ディレクトリ直下にDockerfileとdocker-compose.yml、srcディレクトリを配置し、srcディレクトリの下に実際のソースコードなどを置きます。
@@ -198,7 +206,7 @@ Dockerを使った開発の流れは、
 まずはDockerコンテナを作成するところから始めます。
 
 実際のDockerfileを以下に示します。
-\begin{lstlisting}[caption=dockerfile,label=dockerfile]
+\begin{lstlisting}[style=customBash,caption=dockerfile,label=prog:dockerfile]
 FROM alpine:latest
 
 ENV GNUEFI_VERSION 3.0.9
@@ -239,7 +247,7 @@ apkで必要なパッケージをインストールした後はgnu-efiのコン�
 Dockerfile上では共有設定をしていませんが、この後示すdocker-compose上で共有設定を行います。
 
 次にdocker-composeファイルの中身を以下に示します。
-\begin{lstlisting}[caption=docker-compose,label=docker-compose]
+\begin{lstlisting}[style=customBash,caption=docker-compose,label=prog:docker-compose]
 version: '3'
 services:
     uefi-story:
@@ -266,19 +274,22 @@ UEFIアプリの実行ファイルはPE32+形式です。
 \footnote{詳しくは\url{https://dvdhrm.github.io/2019/01/31/goodbye-gnuefi/}参照。夏コミ以降で筆者も試してみるつもりです。}
 
 \section{UEFI in QEMU}
-QEMUでUEFIを扱うには、OVMF(Open Virtual Machine Hardware)と呼ばれるファームウェアを用いる必要があります。
-OVMFはEDK2の一部として現在は配布されているので
+QEMUでUEFIを扱うには、OVMF(Open Virtual Machine Hardware)と呼ばれるファームウェアを使います。
+OVMFはEDK2の一部として配布されているので
 \footnote{\url{https://github.com/tianocore/edk2/tree/master/OvmfPkg}}
 そこからダウンロードしますが、ビルドが必要になります。
-今回はSourceForgeにあるビルド済のバイナリを用いています。
+
+今回はSourceForgeにあるビルド済のバイナリを(バージョンは古いですが)使っています。
 \footnote{\url{https://sourceforge.net/projects/edk2/files/OVMF/}}
 この処理はMakefile上に記載しています(後述)。
 
+\chapter{実装した(する)機能}
+今まででUEFIアプリを作成するための環境構築を行いました。
+ここからは実際にUEFIアプリを作っていきます。
 
-3段階に分かれてコマンドを叩くのは面倒なので、Makefileを用いてmakeコマンドのみで実行までできるようにしています。
-
-\chapter{実装項目と詳細}
-UEFIアプリ上でノベルゲームを作る上で実装する機能を以下に示します。
+作るといっても闇雲に作るわけにもいかないのである程度の方向性を考えてから作成をしていきます。
+まえがきにもあるように現在進行形で作成中ですが執筆後に開発する内容も踏まえて方向性を考えています。
+執筆時点での方向性(実装する機能)としては以下を考えています。
 \begin{multicols}{2}
     \centering
     \begin{itemize}
@@ -308,7 +319,7 @@ UEFIアプリ上でノベルゲームを作る上で実装する機能を以下�
 この本の中でソースコードまで載せるのは量が増えすぎてしまうので適宜コードを見ながら読んでください。
 以下では実装に使った関数や実装方法などを載せています。
 
-\section{プログラミングをする上でのUEFI}
+\section{gnu-efiを使う際のTips}
 実装について説明する前にUEFIランタイム(とgnu-efi)を扱う上で気をつけておく(自分が気になった)点を説明します。
 \subsection{プロトコルとハンドラ}
 一般的なプログラミング言語と同様に、UEFIのプロトコルもメモリ上にある関数へのポインタを経由して関数を呼び出しています。
@@ -321,11 +332,10 @@ gnu-efiではLibLocateProtocol関数を使うだけでプロトコルが使用�
 の2段階でプロトコルを取得しています。
 
 \subsection{uefi\_call\_wrapper}
-gnu-efiで関数を呼び出す際は
-\begin{lstlisting}[caption=call function with gnu-efi,label=cfgnuefi]
+gnu-efiで関数を呼び出す際はProgram \ref{prog:cfgnuefi}のように\verb+uefi_call_wrapper+関数を用いてラッパーとして呼び出します。
+\begin{lstlisting}[style=customC,caption=call function with gnu-efi,label=prog:cfgnuefi]
 uefi_call_wrapper(GraphicsOutput->Blt, 10, GraphicsOutput, BltBuffer, EfiBltBufferToVideo, 0, 0, 0, 0, DispWidth, DispHeight, DispWidth * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
 \end{lstlisting}
-のように\verb+uefi_call_wrapper+関数を用いてラッパーとして呼び出します。
 この\verb+uefi_call_wrapper+関数はABI(Application Binary Interface)の差異を吸収するためのマクロです。
 コンパイルした後に生成されるファイルは機械語として出力されていますが、機械語に変換する際にABIは用いられます。
 正確には使用しているデータ構造や処理内容が機械語ではどのように表わせるかを規定したものです。
@@ -333,55 +343,113 @@ uefi_call_wrapper(GraphicsOutput->Blt, 10, GraphicsOutput, BltBuffer, EfiBltBuff
 gnu-efiでは\verb+uefi_call_wrapper+マクロを使わないと呼び出せない場合があるので基本的にはこのマクロ経由で呼び出すようにしましょう。
 \footnote{たまに忘れてなんで動かないんだこれってなります。}
 
+関数の引数は第1引数が関数名(関数へのポインタ)、第2引数がその関数が取る引数の数、第3引数以降に関数の引数を入れていきます。
+例えば引数の数が2つのOpenVolumeという関数がある場合、Program \ref{prog:openvolumewrapper}のように記載します。
+\begin{lstlisting}[style=customC,caption=OpenVolume with uefi\_call\_wrapper,label=prog:openvolumewrapper]
+uefi_call_wrapper(OpenVolume, 2, ~~~~, ~~~~)
+\end{lstlisting}
+
+\subsection{Makefile}
+今回構築した開発環境では、
+\begin{enumerate}
+    \item Docker経由でコンパイル
+    \item QEMUをホストで起動して動作確認
+\end{enumerate}
+という2段階の手順を踏みます。
+これを手でいちいちやるのは非常に面倒なので、Makefileを使ってコマンド1つで出来るようにしています。
+実際のMakefileのタスクを記述する部分を以下に示します。
+
+dockerタスク以外の部分は実際のコンパイル処理+QEMUの実行に関わる部分です。
+\footnote{本来であればDocker内でコンパイルは行われるのでホスト側の処理を混ぜるのはとなるのですが、わざわざそこだけファイルを分けるのも…というのもあり、今の形をとっています。}
+これにより、ホスト上で叩くコマンドは"make docker"のみで良くなります。
+
+QEMUの実行時には上でも述べたようにOVMFが必要になります。
+そのため、Makefile上でOVMFファイルが無い場合には用意するようにしています(OVMF/OVMF.fdの部分です)。
+また、QEMUの実行時には特定のディレクトリをイメージとして扱っています。
+QEMUに渡しているオプションの中の\verb+-hda fat:rw:image+の部分でimageディレクトリを指定しています。
+imageディレクトリの構成は、
+{
+    \centering
+    \begin{verbatim}
+    ./image
+    +-- EFI
+        +-- BOOT
+            +-- BOOTX64.EFI
+    \end{verbatim}
+}
+です。
+画像などを用意する際もimageディレクトリ以下に配置してアプリ上から読み取れるようにしています。
+
 \section{ファイル処理}
 ファイル処理はEFIインターフェースで提供されています。
+ファイル処理の流れは
+\begin{enumerate}
+    \item ボリュームを開く (\verb+EFI_SIMPLE_FILE_SYSTEM_PROTOCOL+ $\rightarrow$ OpenVolume関数)
+    \item ファイルを開く (\verb+EFI_FILE_PROTOCOL+ $\rightarrow$ Open関数)
+    \item ファイルの内容を読み取る (\verb+EFI_FILE_PROTOCOL+ $\rightarrow$ Read関数)
+    \item 処理をする
+\end{enumerate}
+という流れで行います。
 
-ファイルの処理には読み込む前にまずファイルが存在するディレクトリボリュームを開く必要があります。
-ディレクトリボリュームは\verb+EFI_SIMPLE_FILE_SYSTEM_PROTOCOL+内のOpenVolume関数を用いて開きます。
-必要となる部分だけ抜粋して載せます。
-\begin{lstlisting}[caption=EFI\_SIMPLE\_FILE\_SYSTEM\_PROTOCOL,label=efi_simple_file_system_protocol]
-typedef struct _EFI_SIMPLE_FILE_SYSTEM_PROTOCOL {
-    UINT64 Revision;
-    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_OPEN_VOLUME OpenVolume;
-} EFI_SIMPLE_FILE_SYSTEM_PROTOCOL
+\subsection{OpenVolume関数}
+ボリュームは\verb+EFI_SIMPLE_FILE_SYSTEM_PROTOCOL+内のOpenVolume関数を使用します。
+\begin{lstlisting}[style=customC]
+EFI_STATUS OpenVolume(IN EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* This, OUT EFI_FILE_PROTOCOL **Root)
 \end{lstlisting}
-\begin{lstlisting}[caption=EFI\_FILE\_PROTOCOL,label=efi_file_protocol]
-typedef struct _EFI_FILE_PROTOCOL {
-    UINT64         Revision;
-    EFI_FILE_OPEN     Open;
-    EFI_FILE_CLOSE     Close;
-    EFI_FILE_DELETE    Delete;
-    EFI_FILE_READ     Read;
-    EFI_FILE_WRITE     Write;
-    ︙
-    } EFI_FILE_PROTOCOL;
-\end{lstlisting}    
-その後\verb+EFI_FILE_PROTOCOL+内のOpen関数でファイルを開き、先に確保したメモリ空間にRead関数を用いてデータを読み込みます。
-ファイルサイズがOpenした状態では分からないため、ある程度の大きさのメモリ領域を確保した上で読み込み、その後メモリサイズをリサイズするという処理をしています。
-\footnote{書いている途中にGetInfo関数で取れることに気づきました…}
+第1引数には\verb+EFI_SIMPLE_FILE_SYSTEM_PROTOCOL+のプロトコルを、第2引数にはルートディレクトリ(ここではimageディレクトリの直下)を指すファイルハンドルが入ります。
+ここでいうボリュームは単一のファイルシステム(今回ではFATベースのEFIファイルシステム)からなる1つのストレージ領域を指します。
+
+\subsection{Open関数}
+ファイルを開くのは\verb+EFI_FILE_PROTOCOL+内のOpen関数を使用します。
+\begin{lstlisting}[style=customC]
+EFI_STATUS Open(IN EFI_FILE_PROTOCOL* This, OUT EFI_FILE_PROTOCOL **NewHandle, IN CHAR16 *FileName, IN UINT64 OpenMode, IN UINT64 Attributes)
+\end{lstlisting}
+第1引数にはOpenVolume関数で取得したボリュームへのハンドル、第2引数には対象のファイルに対するハンドルが返ります。
+第3引数にはファイル名、第4引数は開く際のモードを指定でき、読み書きと作成の3つが指定できます。
+第5引数は作成時のみ有効なオプションであり、作成時にファイルに属性を付加することができます。
+
+\subsection{Read関数}
+開いたファイルを読み込むには\verb+EFI_FILE_PROTOCOL+内のRead関数を使用します。
+\begin{lstlisting}[style=customC]
+    EFI_STATUS Read(IN EFI_FILE_PROTOCOL *This, IN OUT UINTN *BufferSize, OUT VOID *Buffer)
+\end{lstlisting}
+第1引数には読み込みたいファイルのハンドル、第2引数には読み取るサイズ、第3引数には読み取った中身へのポインタが返ります。
+第2引数のサイズ指定はファイルのサイズ以上の値が指定された場合はファイルのサイズが代入されます。
+今回のコードではそれを利用して割り当てサイズを調製しています(あまり良い方法ではありませんが…)。
+ちなみにファイルサイズなどの情報は\verb+EFI_FILE_PROTOCOL+内のGetInfo関数で取得できます。
+この関数であらかじめファイルサイズを取得しておき、そのサイズ分だけメモリ領域を確保しておけば調製は不要になります。
 
 \section{画像処理}
-画像処理は表示するだけならEFIインターフェースで可能です。
-表示には各ピクセルのRGBデータを得る必要がありますが、画像ファイルが圧縮されている場合などは解凍処理などを実装する必要があります。
-また、透過処理(アルファブレンドなど)も実装が必要となります。
-ノベルゲームなどでは図\ref{fig:nobel_exp}に示すようにテキストを表示する枠の部分(ピンク色)が背景画像(橙色)に対して透過していることが多々あるため、機能としては必須と考えています。
+処理の流れとしては以下のようになります。
+\begin{itemize}
+    \item ファイルの読み込み
+    \item ライブラリを利用して別のメモリ領域に画像のRGBデータを読み込む
+    \item フレームバッファに書き込み
+    \item ディスプレイに描画
+\end{itemize}
+
+\subsection{画像の表示}
+UEFI上での描画には、\verb+EFI_GRAPHICS_OUTPUT_PROTOCOL+プロトコル内のBlt関数を用いて描画しています。
+\footnote{バッファのアドレスを取得して直接書き込む方法もあります}
+Blt関数は長方形に関する描画を行う関数であり、ビデオディスプレイへの描画以外にもビデオディスプレイの内容をバッファに取り込んだり、特定の色で塗り潰したりする機能があります。
+\begin{lstlisting}[style=customC]
+EFI_STATUS Blt(IN EFI_GRAPHICS_OUTPUT_PROTOCOL *This, IN OUT EFI_GRAPHICS_OUTPUT_BLT_PIXEL *BltBuffer, IN EFI_GRAPHICS_OUTPUT_BLT_OPERATION BltOperation, IN UINTN SourceX, IN UINTN SourceY, IN UINTN DestinationX, IN UINTN DestinationY, IN UINTN Width, IN UINTN Height, IN UINTN Delta)
+\end{lstlisting}
+引数の数は10個と多いですが、第1引数から順にプロトコルハンドル、画像データ、機能を指定するオプション、描画元の基準X、Y座標、描画先の基準X、Y座標、長方形の幅と高さとなっています。
+今回はバッファからビデオディスプレイに描画する機能であるEfiBltBufferToVideoを使用しています。
+
+EfiBltBufferToVideo指定時の引数の座標指定は図\ref{fig:buffer2video}のように指定します。
 \begin{figure}[H]
     \centering
-    \includegraphics[scale=0.3]{pic/nobel_exp.ai}
-    \caption{ノベルゲームの表示例}
-    \label{fig:nobel_exp}
+    \includegraphics[scale=0.3]{pic/buffer2video.ai}
+    \caption{EfiBltBufferToVideo指定時の座標指定}
+    \label{fig:buffer2video}
 \end{figure}
+今回はバッファサイズはビデオディスプレイのサイズと同じにし、あらかじめバッファに画像やフォントなどの情報を書き込んだ上で描画するスタイルをとっています。
 
-UEFI上での描画には、\verb+EFI_GRAPHICS_OUTPUT_PROTOCOL+というプロトコルを利用します。
-\verb+EFI_GRAPHICS_OUTPUT_PROTOCOL+と\verb+EFI_GRAPHICS_OUTPUT_BLT_PIXEL+の構造を使用する部分だけ抜粋したのを以下に示します。
-\begin{lstlisting}[caption=EFI\_GRAPHICS\_OUTPUT\_PROTOCOL,label=efi_gop]
-typedef struct EFI_GRAPHICS_OUTPUT_PROTCOL {
-    ︙
-    EFI_GRAPHICS_OUTPUT_PROTOCOL_BLT        Blt;
-    EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE       *Mode;
-} EFI_GRAPHICS_OUTPUT_PROTOCOL;
-\end{lstlisting}
-\begin{lstlisting}[caption=EFI\_GRAPHICS\_OUTPUT\_BLT\_PIXEL+,label=efi_gobp]
+Blt関数に指定するバッファは必要な解像度の分の\verb+EFI_GRAPHICS_OUTPUT_BLT_PIXEL+構造体から構成されています。
+\verb+EFI_GRAPHICS_OUTPUT_BLT_PIXEL+構造体の中身をProgram \ref{prog:efi_gobp}に示します。
+\begin{lstlisting}[style=customC,caption=EFI\_GRAPHICS\_OUTPUT\_BLT\_PIXEL,label=prog:efi_gobp]
 typedef struct {
     UINT8 Blue;
     UINT8 Green;
@@ -389,17 +457,12 @@ typedef struct {
     UINT8 Reserved;
 } EFI_GRAPHICS_OUTPUT_BLT_PIXEL;
 \end{lstlisting}
-このプロトコルには他にも2つの関数(QueryMode関数、SetMode関数)と1つの変数(Mode)があり、その中でも描画はBlt関数で行います。
-具体的な描画プロセスは、1ピクセル毎のデータを表現する\verb+EFI_GRAPHICS_OUTPUT_BLT_PIXEL+構造体に代入し、それをフレームバッファーに描きこむことで描画します。
-このフレームバッファーに描画する関数がBlt関数です。
-\footnote{フレームバッファーに描画するだけでなく、読み込むことも出来ます。}
-フレームバッファーにはアドレスを取得して直接書き込む方法もありますが、今回はダブルバッファリング(描画メモリと別のメモリ上との)を行うためBlt関数を使用しています。
+ここに画像ファイルから取得したRGBデータを代入していきます。
 
-画像ファイルは最初にRGBの生データに変換してから\verb+EFI_GRAPHICS_OUTPUT_BLT_PIXEL+構造体に代入します。
-生データへの変換はnothings氏が作成したstbと呼ばれる単一ファイルから構成されるライブラリを利用しました。
-\footnote{\url{https://github.com/nothings/stb} ライセンスはパブリックドメインです。}
-このライブラリはlibcを利用しているため、libc関連の処理は全て置き換える必要があります。
-変換した関数と置き換え後の関数の一覧を以下に示します。
+画像ファイルからRGBデータへの変換にははnothings氏が作成したstbと呼ばれる単一ファイルから構成されるライブラリを利用しました。
+\footnote{\url{https://github.com/nothings/stb} \\ ライセンスはパブリックドメインです。}
+別途ライブラリ等が必要ないので、libc関連の処理を置き換えるだけでUEFI上で動作するのがこのライブラリを選んだ理由です。
+libc関数とUEFI対応関数との変換表の一覧を表\ref{tb:function}に示します。
 \begin{table}[H]
     \centering
     \begin{tabular}{|c|c|}
@@ -416,24 +479,64 @@ typedef struct {
     \label{tb:function}
 \end{table}
 ここで挙げた置き換え後の関数は全部を網羅していませんが、最低限これだけの置き換えを行うことで動作しています。
-また、全てUEFIのランタイム関数ではなくgnu-efi内で定義されている関数です。
+また、変換後の関数はgnu-efi側で(おそらく)利便性のために作られたであろう関数を使用しています。
+AllocatePool関数を例に取ると中身はProgram \ref{prog:allocatepool}のようになっています。
+\begin{lstlisting}[style=customC,caption=AllocatePool function,label=prog:allocatepool]
+VOID *
+AllocatePool (
+    IN UINTN                Size
+    )
+{
+    EFI_STATUS              Status;
+    VOID                    *p;
 
-処理の流れとしては以下のようになります。
-\begin{itemize}
-    \item ファイルの読み込み
-    \item ライブラリを利用して別のメモリ領域に画像のRGBデータを読み込む
-    \item フレームバッファに書き込み
-    \item ディスプレイに描画
-\end{itemize}
-この処理を繰り返すことで描画を行います。
+    Status = uefi_call_wrapper(BS->AllocatePool, 3, PoolAllocationType, Size, &p);
+    if (EFI_ERROR(Status)) {
+        DEBUG((D_ERROR, "AllocatePool: out of pool  %x\n", Status));
+        p = NULL;
+    }
+    return p;
+}
+\end{lstlisting}
+本来のAllocatePoolだと返り値が\verb+EFI_STATUS+型(そもそもEFIランタイムの関数は大多数がこの型)ですが、確保したメモリ領域を示すポインタを返すようにした方が利便性が高いと考えてこのような関数を作成したのでしょう(あくまで想像ですが)。
+実際malloc関数もメモリ領域へのポインタを返しますし、関数を置き換えるだけで良いというのは(個人的には)ありがたいと思っています。
+\footnote{関数名を被せるのはちょっとアレな気もしますが}
+
+\subsection{透過処理}
+透過処理は背景色などの特定の色を描画時にスキップすることでその部分だけ透明かのように描画する処理です。
+この本ではビットマップフォントの背景色の透過するのに使用しています。
+
+透過処理はアルゴリズムとしては非常に単純で、特定のピクセルの色が指定した色であれば反映しない、それ以外であれば反映するというだけのアルゴリズムです。
+実装自体は非常に簡単ですが、ビットマップフォントで試した時に人間には黒色に見えても実際のRGB値は0x000000ではない場合が散見されたため、ある程度の遊びを入れることで透過処理を実装しています。
+実装コードをProgram \ref{prog:transparent}に示します。
+\begin{lstlisting}[style=customC,caption=Transparent process,label=prog:transparent]
+// very very simple transparent process
+INT32 IndexColor = (INT32)(0x00000000 + (*ImgIndex << 16) + (*(ImgIndex+1) << 8) + (*(ImgIndex+2)));
+if(XrayColor != -1 && XrayColor >= IndexColor){
+    ImgIndex += Bpp;
+    continue;
+} 
+\end{lstlisting}
+RGB値の表現には各色で256段階(0x00 $\sim$ 0xFF)あるため、24bit分の領域があれば問題ないことになります。
+今回は32bit整数の下24bitを使用して透過するRGB値を設定しています。
+符号付き整数にしているのは、透過処理の必要が無い場合には-1とすることで処理をしないようにするためです。
+コードのIndexColorが各ピクセルのRGB値、XrayColorが透過の閾値となるRGB値です。
+このコードでは現状黒色に対してのみ透過処理を行っているため、閾値分の遊びを入れてそのRGB値以下の場合にはスキップするという処理にしています。
+
+特定の色に対して透過処理を行う場合は、真値となる色のRGB値に対して上下いくらかの範囲で遊びを入れるなりして判定することで実現可能です。
 
 \section{BGM}
 BGMに関してはUEFIが提供しているインターフェースに音楽などの再生機能が無いため、ドライバ経由でアクセスするなどの手段を自力で実装する必要があります。
 実装方法としてはPCスピーカーを使う方法がもっとも単純ですが、いわゆるビープ音しか鳴らせないためHDA(High Difinition Audio)インターフェースに対応することでより高音質なデータを扱うことができます。
 この本ではBGMに関しては述べません。
+\footnote{そのうちやりたいとは考えています。}
 
 \section{テキスト}
-インターフェース自体にも文字の出力関数は用意されていますが、画像で塗り潰してしまうため見えなくなるというのと、図\ref{fig:defaultfont}のように見栄えが非常に悪くなるという問題があります。
+UEFIランタイム上でもテキストを表示する機能は\verb+EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL+という形で用意されています。
+ただし、この機能は画像処理とは共存できないため、図\ref{fig:defaultfont}のように文字の部分だけ黒塗りの背景色になってしまいます。
+また、表示できる文字もUEFIのファームウェアによって異なるため、環境によっては日本語などが表示できないという問題点もあります。
+これでは非常に見栄えが悪いため、ビットマップフォントを用いて画像として文字を表示する機能を実装することにしました。
+ビットマップフォントを用いた場合は図\ref{fig:bitmapfont}のようになります。
 \begin{figure}[H]
     \centering
     \begin{tabular}{c}
@@ -451,23 +554,15 @@ BGMに関してはUEFIが提供しているインターフェースに音楽な�
         \end{minipage}
     \end{tabular}  
 \end{figure}
-そのため、フォントを画像として表示することで各種問題を回避しています(図\ref{fig:bitmapfont})。
 今回はGNU Unifontのビットマップ画像を用いたフォント表示を実装することにしました。
-ビットマップフォントなので見た目はよろしくありませんが、背景色で透過できるためより自然な見た目になります。
-将来的にはTrueTypeフォントを扱えるようにすることでより綺麗にフォントが表示することを考えています。
+ビットマップフォントなので見た目はよろしくありませんが、背景色を透過できるためより自然な見た目になります。
+\footnote{将来的にはTrueTypeフォントを扱えるようにすることでより綺麗にフォントが表示したいです。誰かが既にやってそうですが…}
 
-今回フォントの表示にはビットマップフォントを用いるので画像処理が出来ればフォント処理も同様に可能です。
-ただしそのまま表示すると下の図のようにフォントの部分だけ背景が黒色になってしまうので、透過処理が必要になります。
-\begin{figure}[H]
-    \centering
-    \includegraphics[scale=0.25]{pic/font_with_backblack.png}
-    \caption{フォントの背景色を透過しなかった場合の結果}
-    \label{fig:font_with_backblack}
-\end{figure}
-透過処理はRGBが指定した値以下であれば書き換えずに次のピクセルに移動するという非常に単純な処理です。
+UEFIでの文字はUnicode(UTF-16)で扱われるので、各文字に対して上位ビットと下位ビットを抜き出すことで対応する範囲のフォントを表示しています。
+例えばUTF-16での「あ」は0x3042で表現でき、上位ビットは0x30、下位ビットは0x42と分解できます。
+ここからビットマップ上の座標へと変換して表示しています。
 
-与えられた文字から画像データに変換するのにはUnicodeの符号位置をビットマップ上の位置に変換することで表示します。
-UEFIでは標準で2バイトUnicodeを採用しているため、そこから上位ビットと下位ビットを抜き出すことで横軸上位ビット、縦軸下位ビットの組み合わせに落とし込むことが可能です。
+また、長い文章などを表示する際はビデオディスプレイの幅からはみ出さないように適切な位置で折り返す必要があります。
 
 \section{キー処理}
 キー入力はReadKeyStroke関数を用いることで取得することが可能です。
@@ -487,7 +582,19 @@ UnicodeCharはScanCodeとは逆にUnicodeで表現できる文字が入力され
 Unicodeで表現できない文字の場合は0を代入します。
 
 \chapter{あとがき}
-hogehogehogeblahblahblah
+始めに、ここまで読んでいただきありがとうございます。
+そもそものきっかけが自分だけの本を何か出したいなあというのが動機だったので、内容が無いよう…()な感じに本になってしまった感が否めませんが本を書くのは結構楽しめたので個人的には良い経験が出来たと思っています。
+続きの本を出すかは執筆段階では決めていませんが、他にも色々なジャンルで挑戦してみたいとは思っています(そもそも碌にブログすら更新していないのでまずはそっちをやらねば…という気持ちです)。
+
+UEFIを題材に選んだ理由は単純に低レイヤ(と言っていいのかは分かりませんが)に興味があったのと、UEFI-DOOM
+\footnote{https://github.com/warfish/DOOM}
+を見てDOOMが動かせるなら他のゲームとかも動かせるんじゃね？と思ったのが主な理由です。
+実際には仕様書の長さに唖然としたり(2500ページ超)、コードのデバッグがうまくできずにしばらく放置していたり(これは自分の性格的な問題もありますが)とこの程度の内容を書くのにさえ色々難航した部分があったりとまだまだ完成には程遠い所にいるとは感じています
+(BGM機能とか手を付けれてすらいないですし…)。
+なのでこの本で終わりにするつもりは全く無く、今後も気長に進めていければと思います。
+コンスタントに本出したりモノ作ってる人、やっぱり他の人とは違う何かがあるんだろうか…。
+
+というわけで、あとがきまで丁寧に読んでくださってる方にはもう一度、読んでくださってありがとうございました。
 \newpage
 
 \thispagestyle{empty}
