@@ -87,9 +87,9 @@
 \begin{document}
 
 % 表紙裏
-\thispagestyle{empty}
-\mbox{}
-\newpage
+%\thispagestyle{empty}
+%\mbox{}
+%\newpage
 
 % 本文
 \chapter*{はじめに}
@@ -471,6 +471,7 @@ typedef struct {
 libc関数とUEFI対応関数との変換表の一覧を表\ref{tb:function}に示します。
 \begin{table}[H]
     \centering
+    \caption{Libc関数とUEFIランタイム関数との対応表}
     \begin{tabular}{|c|c|}
         \hline
         置き換え前 & 置き換え後 \\
@@ -553,25 +554,17 @@ UEFIランタイム上でもテキストを表示する機能は\verb+EFI_SIMPLE
 ただし、この機能は画像処理とは共存できないため、図\ref{fig:defaultfont}のように文字の部分だけ黒塗りの背景色になってしまいます。
 また、表示できる文字もUEFIのファームウェアによって異なるため、環境によっては日本語などが表示できないという問題点もあります。
 \footnote{少なくともQEMU上ではASCII文字しか表示できませんでした}
-これでは非常に見栄えが悪いため、ビットマップフォントを用いて画像として文字を表示する機能を実装しています。
-ビットマップフォントを用いた場合は図\ref{fig:bitmapfont}のようになります。
+その標準インターフェースでの文字と実装したビットマップフォントでの文字を両方表示すると図\ref{fig:defaultfont}のようになります。
 \begin{figure}[H]
     \centering
-    \begin{tabular}{c}
-        \begin{minipage}{0.5\hsize}
-            \centering
-            \includegraphics[scale=0.22]{pic/defaultfont.png}
-            \caption{標準インターフェースでの文字の表示例}
-            \label{fig:defaultfont}
-        \end{minipage}
-        \begin{minipage}{0.5\hsize}
-            \centering
-            \includegraphics[scale=0.22]{pic/screenshot.png}
-            \caption{透過処理を施したビットマップフォントでの文字の表示例}
-            \label{fig:bitmapfont}
-        \end{minipage}
-    \end{tabular}  
+    \includegraphics[scale=0.4]{pic/black.pdf}
+    \caption{標準インターフェース(上)とビットマップフォント(下)での文字の表示例}
+    \label{fig:defaultfont}
 \end{figure}
+図がモノクロのため、分かりにくいですが実際にはモノクロ以外の背景色だと標準インターフェースでは文字の回りに黒い枠が出来てしまいます。
+\footnote{これは実際に実機で見た方が分かりやすいと思います。}
+これでは非常に見栄えが悪いため、ビットマップフォントを用いて画像として文字を表示する機能を実装しています。
+
 今回はGNU Unifontのビットマップ画像を用いたフォント表示を実装することにしました。
 ビットマップフォントなので見た目はよろしくありませんが、背景色を透過できるためより自然な見た目になります。
 \footnote{将来的にはTrueTypeフォントを扱えるようにすることでより綺麗にフォントが表示したいです。誰かが既にやってそうですが…}
@@ -645,7 +638,7 @@ UEFIを題材に選んだ理由は単純に低レイヤ(と言っていいのか
 \begin{flushright}
     \begin{minipage}{0.8\hsize}
         \begin{description}
-            \item{タイトル: } hogehogehoge
+            \item{タイトル: } OSが無くてもゲームがしたい！
             \item{著者: }こめわっぽ
             \item{発行: }2019年8月12日
             \item{連絡先: }komekome09.online@gmail.com
@@ -657,9 +650,9 @@ UEFIを題材に選んだ理由は単純に低レイヤ(と言っていいのか
 \newpage
 
 % 裏表紙裏
-\thispagestyle{empty}
-\mbox{}
-\newpage
+%\thispagestyle{empty}
+%\mbox{}
+%\newpage
 
 \end{document}
 
