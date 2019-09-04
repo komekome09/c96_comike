@@ -20,6 +20,7 @@
 \usepackage{wrapfig}
 \usepackage{bxpapersize}
 \usepackage{biblatex}
+\usepackage{pdfpages} % insert pdf as document
 
 % 参考文献追加 + 全ての文献を表示
 \nocite{*}
@@ -86,10 +87,13 @@
 % 本文
 \begin{document}
 
+% 表紙
+\includepdf[pages=-]{cover/cover.pdf}
+
 % 表紙裏
-%\thispagestyle{empty}
-%\mbox{}
-%\newpage
+\thispagestyle{empty}
+\mbox{}
+\newpage
 
 % 本文
 \chapter*{はじめに}
@@ -650,9 +654,12 @@ UEFIを題材に選んだ理由は単純に低レイヤ(と言っていいのか
 \newpage
 
 % 裏表紙裏
-%\thispagestyle{empty}
-%\mbox{}
-%\newpage
+\thispagestyle{empty}
+\mbox{}
+\newpage
+
+% 裏表紙
+\includepdf[pages=-]{cover/back_cover.pdf}
 
 \end{document}
 
